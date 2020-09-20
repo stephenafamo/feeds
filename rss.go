@@ -15,6 +15,7 @@ type RssFeedXml struct {
 	XMLName          xml.Name `xml:"rss"`
 	Version          string   `xml:"version,attr"`
 	ContentNamespace string   `xml:"xmlns:content,attr"`
+	AtomNamespace    string   `xml:"xmlns:atom,attr"`
 	Channel          *RssFeed
 }
 
@@ -41,24 +42,25 @@ type RssTextInput struct {
 }
 
 type RssFeed struct {
-	XMLName        xml.Name `xml:"channel"`
-	Title          string   `xml:"title"`       // required
-	Link           string   `xml:"link"`        // required
-	Description    string   `xml:"description"` // required
-	Language       string   `xml:"language,omitempty"`
-	Copyright      string   `xml:"copyright,omitempty"`
-	ManagingEditor string   `xml:"managingEditor,omitempty"` // Author used
-	WebMaster      string   `xml:"webMaster,omitempty"`
-	PubDate        string   `xml:"pubDate,omitempty"`       // created or updated
-	LastBuildDate  string   `xml:"lastBuildDate,omitempty"` // updated used
-	Category       string   `xml:"category,omitempty"`
-	Generator      string   `xml:"generator,omitempty"`
-	Docs           string   `xml:"docs,omitempty"`
-	Cloud          string   `xml:"cloud,omitempty"`
-	Ttl            int      `xml:"ttl,omitempty"`
-	Rating         string   `xml:"rating,omitempty"`
-	SkipHours      string   `xml:"skipHours,omitempty"`
-	SkipDays       string   `xml:"skipDays,omitempty"`
+	XMLName        xml.Name     `xml:"channel"`
+	Title          string       `xml:"title"`       // required
+	Link           string       `xml:"link"`        // required
+	Description    string       `xml:"description"` // required
+	Language       string       `xml:"language,omitempty"`
+	Copyright      string       `xml:"copyright,omitempty"`
+	ManagingEditor string       `xml:"managingEditor,omitempty"` // Author used
+	WebMaster      string       `xml:"webMaster,omitempty"`
+	PubDate        string       `xml:"pubDate,omitempty"`       // created or updated
+	LastBuildDate  string       `xml:"lastBuildDate,omitempty"` // updated used
+	Category       string       `xml:"category,omitempty"`
+	Generator      string       `xml:"generator,omitempty"`
+	Docs           string       `xml:"docs,omitempty"`
+	Cloud          string       `xml:"cloud,omitempty"`
+	Ttl            int          `xml:"ttl,omitempty"`
+	Rating         string       `xml:"rating,omitempty"`
+	SkipHours      string       `xml:"skipHours,omitempty"`
+	SkipDays       string       `xml:"skipDays,omitempty"`
+	AtomLink       *RssAtomLink `xml:"atom:link,omitempty"` // for atom:link
 	Image          *RssImage
 	TextInput      *RssTextInput
 	Items          []*RssItem `xml:"item"`
@@ -74,9 +76,25 @@ type RssItem struct {
 	Category    string `xml:"category,omitempty"`
 	Comments    string `xml:"comments,omitempty"`
 	Enclosure   *RssEnclosure
-	Guid        string `xml:"guid,omitempty"`    // Id used
-	PubDate     string `xml:"pubDate,omitempty"` // created or updated
-	Source      string `xml:"source,omitempty"`
+	Guid        *RssGuid `xml:"guid,omitempty"`    // Guid
+	PubDate     string   `xml:"pubDate,omitempty"` // created or updated
+	Source      string   `xml:"source,omitempty"`
+}
+
+// Multiple links with different rel can coexist
+type RssAtomLink struct {
+	// <atom:link rel="enclosure" type="audio/mpeg" title="MP3" href="http://www.example.org/myaudiofile.mp3" length="1234" />
+	XMLName xml.Name `xml:"atom:link"`
+	Href    string   `xml:"href,attr"`
+	Rel     string   `xml:"rel,attr,omitempty"`
+	Type    string   `xml:"type,attr,omitempty"`
+	Length  string   `xml:"length,attr,omitempty"`
+}
+
+type RssGuid struct {
+	//RSS 2.0 <guid isPermaLink="false">tag:dallas.example.com,4131:news</guid>
+	Id          string `xml:",innerxml"`
+	IsPermalink bool   `xml:"isPermaLink,attr"`
 }
 
 type RssEnclosure struct {
@@ -97,8 +115,10 @@ func newRssItem(i *Item) *RssItem {
 		Title:       i.Title,
 		Link:        i.Link.Href,
 		Description: i.Description,
-		Guid:        i.Id,
 		PubDate:     anyTimeFormat(time.RFC1123Z, i.Created, i.Updated),
+	}
+	if i.Id != "" {
+		item.Guid = &RssGuid{Id: i.Id, IsPermalink: i.isIdPermalink}
 	}
 	if len(i.Content) > 0 {
 		item.Content = &RssContent{Content: i.Content}
@@ -145,6 +165,9 @@ func (r *Rss) RssFeed() *RssFeed {
 		Copyright:      r.Copyright,
 		Image:          image,
 	}
+	if r.SelfLink != "" {
+		channel.AtomLink = &RssAtomLink{Href: r.SelfLink, Rel: "self"}
+	}
 	for _, i := range r.Items {
 		channel.Items = append(channel.Items, newRssItem(i))
 	}
@@ -164,5 +187,6 @@ func (r *RssFeed) FeedXml() interface{} {
 		Version:          "2.0",
 		Channel:          r,
 		ContentNamespace: "http://purl.org/rss/1.0/modules/content/",
+		AtomNamespace:    "http://www.w3.org/2005/Atom",
 	}
 }

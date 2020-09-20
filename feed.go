@@ -26,21 +26,23 @@ type Enclosure struct {
 }
 
 type Item struct {
-	Title       string
-	Link        *Link
-	Source      *Link
-	Author      *Author
-	Description string // used as description in rss, summary in atom
-	Id          string // used as guid in rss, id in atom
-	Updated     time.Time
-	Created     time.Time
-	Enclosure   *Enclosure
-	Content     string
+	Title         string
+	Link          *Link
+	Source        *Link
+	Author        *Author
+	Description   string // used as description in rss, summary in atom
+	Id            string // used as guid in rss, id in atom
+	isIdPermalink bool   // used to set isPermaLink in rss feeds
+	Updated       time.Time
+	Created       time.Time
+	Enclosure     *Enclosure
+	Content       string
 }
 
 type Feed struct {
 	Title       string
 	Link        *Link
+	SelfLink    string // used in rss to set atom:link
 	Description string
 	Author      *Author
 	Updated     time.Time

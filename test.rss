@@ -24,7 +24,7 @@
             <title><![CDATA[Lorem ipsum 2018-10-30T23:21:00+00:00]]></title>
             <description><![CDATA[Ea est do quis fugiat exercitation.]]></description>
             <link>http://example.com/test/1540941660</link>
-            <guid isPermaLink="true">http://example.com/test/1540941660</guid>
+            <guid isPermaLink="false">http://example.com/test/1540941660</guid>
             <dc:creator><![CDATA[John Smith]]></dc:creator>
             <pubDate>Tue, 30 Oct 2018 23:21:00 GMT</pubDate>
         </item>
